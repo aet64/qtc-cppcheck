@@ -81,14 +81,21 @@ void CppcheckRunner::updateSettings () {
   runArguments_.clear ();
   QString enabled = QLatin1String ("--enable=warning,style,performance,"
                                    "portability,information,missingInclude");
-  // Overwrite enable with user parameters if present
-  for (int i = runArguments_.size () - 1; i >= 0; --i) {
-    if (runArguments_.at (i).startsWith (QLatin1String ("--enable"))) {
-      enabled = runArguments_.takeAt (i);
-      break;
+
+  // Get custom parameters
+  auto expander = Utils::globalMacroExpander ();
+  auto expanded = expander->expand (settings_->customParameters ());
+  QStringList customParametersList (expanded.split (QLatin1Char (' '), QString::SkipEmptyParts));
+
+  // Clear default enabled option if custom parameters is present
+  foreach (QString customParameters, customParametersList) {
+    if (customParameters.startsWith(QLatin1String ("--enable"))) {
+        enabled.clear();
+        break;
     }
   }
-  if (settings_->checkUnused ()) {
+
+  if (settings_->checkUnused() &&!enabled.isEmpty()) {
     enabled += QLatin1String (",unusedFunction");
   }
   else{ //TODO always check with threads but rescan for unused after finish?
@@ -107,6 +114,8 @@ void CppcheckRunner::checkFiles (const QStringList &fileNames) {
   fileCheckQueue_ += fileNames;
   fileCheckQueue_.removeDuplicates ();
   fileCheckQueue_.sort ();
+  removeIgnoredDirectoriesFromFileCheckQueue();
+
   if (process_.isOpen ()) {
     if (fileCheckQueue_ == currentlyCheckingFiles_) {
       process_.kill ();
@@ -143,49 +152,59 @@ void CppcheckRunner::checkQueuedFiles () {
   arguments += runArguments_;
 
   QStringList includes = includePaths (fileCheckQueue_);
+  QStringList excludes = excludePaths();
   currentlyCheckingFiles_ = fileCheckQueue_;
   fileCheckQueue_.clear ();
 
-  int argumentLength = arguments.join (QLatin1Literal (" ")).length ();
-  int filesLength = currentlyCheckingFiles_.join (QLatin1Literal (" ")).length ();
-  int includesLength = includes.join (QLatin1Literal (" ")).length ();
-  if (argumentLength + includesLength + filesLength >= maxArgumentsLength_) {
-    if (fileListFileContents_ != currentlyCheckingFiles_) {
-      fileListFileContents_ = currentlyCheckingFiles_;
-      fileListFile_.resize (0);
-      includeListFile_.resize (0);
+  arguments += excludes;
+  arguments += currentlyCheckingFiles_;
+  arguments += includes;
 
-      if (fileListFile_.open () && includeListFile_.open ()) {
-        QByteArray filesArg = fileListFileContents_.join (QLatin1String ("\n")).toLocal8Bit ();
-        fileListFile_.write (filesArg);
-        fileListFile_.close ();
-
-        for (auto &i: includes) {
-          i = i.mid (2);
-        }
-        QByteArray includesArg = includes.join (QLatin1String ("\n")).toLocal8Bit ();
-        includeListFile_.write (includesArg);
-        includeListFile_.close ();
-      }
-      else{
-        Core::MessageManager::write (tr ("Failed to write cppcheck's argument files"),
-                                     Core::MessageManager::Silent);
-        return;
-      }
-    }
-    arguments << QString (QLatin1String ("--file-list=%1")).arg (fileListFile_.fileName ());
-    arguments << QString (QLatin1String ("--includes-file=%1")).arg (includeListFile_.fileName ());
-  }
-  else{
-    arguments += currentlyCheckingFiles_;
-    arguments += includes;
-  }
   emit startedChecking (currentlyCheckingFiles_);
   if (showOutput_) {
     Core::MessageManager::write (QString ("Starting CppChecker with:%1, %2")
                                  .arg (binary,arguments.join (" ")), Core::MessageManager::WithFocus);
   }
   process_.start (binary, arguments);
+}
+
+QStringList CppcheckRunner::ignoreDirectoriesList()
+{
+    auto expander = Utils::globalMacroExpander ();
+    auto expanded = expander->expand (settings_->ignoreDirectories() );
+    QStringList ignoreDirectoriesList(expanded.split (QLatin1Char (' '), QString::SkipEmptyParts));
+
+    return ignoreDirectoriesList;
+}
+
+void CppcheckRunner::removeIgnoredDirectoriesFromFileCheckQueue()
+{
+    Core::MessageManager::write (QString ("Ignored directories: %1")
+                                 .arg (ignoreDirectoriesList().join (" ")), Core::MessageManager::WithFocus);
+
+    foreach (QString ignoreDirectories, ignoreDirectoriesList()) {
+
+        QMutableListIterator<QString> fileCheckQueueIterator(fileCheckQueue_);
+
+        while (fileCheckQueueIterator.hasNext()) {
+
+            if (fileCheckQueueIterator.next().startsWith(ignoreDirectories))
+
+                fileCheckQueueIterator.remove();
+        }
+    }
+}
+
+QStringList CppcheckRunner::excludePaths()
+{
+    QStringList excludePaths;
+
+    foreach (const QString &ignoreDirectories, ignoreDirectoriesList()) {
+
+        excludePaths.append(QLatin1String("-i") + ignoreDirectories);
+    }
+
+    return excludePaths;
 }
 
 void CppcheckRunner::readOutput () {

@@ -79,6 +79,10 @@ namespace QtcCppcheck {
         QTemporaryFile fileListFile_;
         //! File that contains include paths list (if there are too much run args).
         QTemporaryFile includeListFile_;
+
+        QStringList ignoreDirectoriesList();
+        void removeIgnoredDirectoriesFromFileCheckQueue();
+        QStringList excludePaths();
     };
 
   } // namespace Internal

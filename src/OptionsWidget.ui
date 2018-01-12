@@ -126,7 +126,7 @@
      <item>
       <widget class="QLabel" name="ignoreEditLabel">
        <property name="text">
-        <string>Ignore patterns:</string>
+        <string>Ignore directories:</string>
        </property>
       </widget>
      </item>

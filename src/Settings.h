@@ -54,8 +54,8 @@ namespace QtcCppcheck {
         bool popupOnWarning () const;
         void setPopupOnWarning (bool popupOnWarning);
 
-        QStringList ignorePatterns () const;
-        void setIgnorePatterns (const QStringList &ignorePatterns);
+        QString ignoreDirectories() const;
+        void setIgnoreDirectories (const QString &ignoreDirectories);
 
       private:
         QString binaryFile_;
@@ -68,7 +68,7 @@ namespace QtcCppcheck {
         bool checkUnused_;
         bool checkInconclusive_;
         QString customParameters_;
-        QStringList ignorePatterns_;
+        QString ignoreDirectories_;
         bool showBinaryOutput_;
         bool showId_;
 

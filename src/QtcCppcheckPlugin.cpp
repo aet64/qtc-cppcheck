@@ -242,7 +242,7 @@ QStringList QtcCppcheckPlugin::checkableFiles (const Node *node, bool forceSelec
   }
 
   QList<QRegExp> filters;
-  for (const auto &i: settings_->ignorePatterns ()) {
+  for (const auto &i: settings_->ignoreDirectories ()) {
     filters << QRegExp (i, Qt::CaseSensitive, QRegExp::Wildcard);
   }
 

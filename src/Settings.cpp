@@ -50,7 +50,7 @@ void Settings::save () {
   settings.setValue (QLatin1String (SETTINGS_CHECK_UNUSED), checkUnused_);
   settings.setValue (QLatin1String (SETTINGS_CHECK_INCONCLUSIVE), checkInconclusive_);
   settings.setValue (QLatin1String (SETTINGS_CUSTOM_PARAMS), customParameters_);
-  settings.setValue (QLatin1String (SETTINGS_IGNORE_PATTERNS), ignorePatterns_.join (","));
+  settings.setValue (QLatin1String (SETTINGS_IGNORE_PATTERNS), ignoreDirectories_);
   settings.setValue (QLatin1String (SETTINGS_SHOW_OUTPUT), showBinaryOutput_);
   settings.setValue (QLatin1String (SETTINGS_SHOW_ID), showId_);
   settings.setValue (QLatin1String (SETTINGS_POPUP_ON_ERROR), popupOnError_);
@@ -78,8 +78,8 @@ void Settings::load () {
                                        false).toBool ();
   customParameters_ = settings.value (QLatin1String (SETTINGS_CUSTOM_PARAMS),
                                       QString ()).toString ();
-  ignorePatterns_ = settings.value (QLatin1String (SETTINGS_IGNORE_PATTERNS),
-                                    QString ()).toString ().split (",", QString::SkipEmptyParts);
+  ignoreDirectories_ = settings.value (QLatin1String (SETTINGS_IGNORE_PATTERNS),
+                                    QString ()).toString ();
   showBinaryOutput_ = settings.value (QLatin1String (SETTINGS_SHOW_OUTPUT),
                                       false).toBool ();
   showId_ = settings.value (QLatin1String (SETTINGS_SHOW_ID),
@@ -157,15 +157,12 @@ void Settings::setPopupOnWarning (bool popupOnWarning) {
   popupOnWarning_ = popupOnWarning;
 }
 
-QStringList Settings::ignorePatterns () const {
-  return ignorePatterns_;
+QString Settings::ignoreDirectories () const {
+  return ignoreDirectories_;
 }
 
-void Settings::setIgnorePatterns (const QStringList &ignorePatterns) {
-  ignorePatterns_ = ignorePatterns;
-  for (auto &i: ignorePatterns_) {
-    i = i.trimmed ();
-  }
+void Settings::setIgnoreDirectories (const QString &ignoreDirectories) {
+  ignoreDirectories_ = ignoreDirectories;
 }
 
 bool Settings::checkOnProjectChange () const {
