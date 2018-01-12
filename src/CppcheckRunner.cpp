@@ -180,7 +180,7 @@ QStringList CppcheckRunner::ignoreDirectoriesList()
 void CppcheckRunner::removeIgnoredDirectoriesFromFileCheckQueue()
 {
     Core::MessageManager::write (QString ("Ignored directories: %1")
-                                 .arg (ignoreDirectoriesList().join (" ")), Core::MessageManager::WithFocus);
+                                 .arg (ignoreDirectoriesList().join (" ")), Core::MessageManager::Silent);
 
     foreach (QString ignoreDirectories, ignoreDirectoriesList()) {
 
